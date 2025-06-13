@@ -95,8 +95,17 @@ function handleLogin() {
             </v-card>
           </v-col>
         </v-row>
-      </v-container> </v-main
-  ></v-app>
+      </v-container> </v-main>
+
+  <v-footer
+    class="d-none d-md-flex justify-center pa-4 bg-footer"
+    app
+  >
+    <span class="white--text">© 2025 CloseShop. All rights reserved.</span>
+  </v-footer>
+
+
+  </v-app>
 </template>
 
 <style scoped>
@@ -114,6 +123,10 @@ h1{
 .border-card{
     border-right: #3D79B6 solid 5px;
     border-bottom: #3D79B6 solid 5px;
+}
+
+.bg-footer {
+  background-color: #EFF0F2;
 }
 /* Optional: custom mobile tweaks */
 @media (max-width: 600px) {
