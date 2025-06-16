@@ -77,7 +77,7 @@ function handleLogin() {
                 size="large"
                 variant="tonal"
                 block
-                @click="handleLogin"
+               to="/homepage"
               >
                 Log In
               </v-btn>
