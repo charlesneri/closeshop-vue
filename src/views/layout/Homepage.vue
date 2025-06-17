@@ -25,7 +25,6 @@ function onSearchClick() {
   // You can add logic here like:
   // searchProducts(searchQuery.value)
 }
-
 </script>
 
 <template>
@@ -112,9 +111,37 @@ function onSearchClick() {
       <v-btn @click="navigate('cart')" prepend-icon="mdi-cart">Cart</v-btn>
       <v-btn @click="navigate('me')" prepend-icon="mdi-account">Me</v-btn>
     </v-bottom-navigation>
-  </v-app>
 
-  <v-main> </v-main>
+    <v-main class="pa-4">
+  <!-- Recommended Section -->
+  <section class="section-block">
+    <h1 class="title-line">Recommended</h1>
+    <v-divider class="mydivide" />
+    <v-card class="item-holder">
+      <v-img class="item-pic" :src="logo" cover />
+    </v-card>
+  </section>
+
+  <!-- Nearby Stores Section -->
+  <section class="section-block">
+    <h1 class="title-line">Nearby Stores</h1>
+    <v-divider class="mydivide" />
+    <v-card class="item-holder">
+      <v-img class="item-pic" :src="logo" cover />
+    </v-card>
+  </section>
+
+  <!-- Featured Sellers Section -->
+  <section class="section-block">
+    <h1 class="title-line">Featured Sellers on Our Listing</h1>
+    <v-divider class="mydivide" />
+    <v-card class="item-holder">
+      <v-img class="item-pic" :src="logo" cover />
+    </v-card>
+  </section>
+</v-main>
+
+  </v-app>
 </template>
 <style scoped>
 .nav-web {
@@ -152,5 +179,36 @@ function onSearchClick() {
   max-width: 350px;
   min-width: 100px;
   margin-top: 10px;
+}
+/*css in the main*/
+
+.title-line {
+  font-size: 1.5rem;
+  margin-bottom: 8px;
+  margin-left: 2%;
+}
+
+.mydivide {
+  background-color: #000;
+  height: 3px;
+  width: 50%;
+  margin: 0 auto 16px auto;
+}
+
+.section-block {
+  margin-bottom: 32px;
+}
+
+.item-holder {
+  max-width: 300px;
+  margin: 0 auto;
+  padding: 8px;
+}
+
+.item-pic {
+  width: 100%;
+  height: 200px;
+  border-radius: 12px;
+  border: 1px solid #ccc;
 }
 </style>
