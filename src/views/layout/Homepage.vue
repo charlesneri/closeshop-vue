@@ -1,13 +1,15 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useDisplay } from 'vuetify'
+import L from 'leaflet'
 import logo from '@/assets/img/closeshop-bg.png'
 
 const { mdAndUp } = useDisplay()
 const isDesktop = computed(() => mdAndUp.value)
 
-// Show/hide search input
 const showSearch = ref(false)
+const searchQuery = ref('')
+let currentMarker = null
 
 function toggleSearch() {
   showSearch.value = !showSearch.value
@@ -17,13 +19,76 @@ function navigate(to) {
   console.log(`Navigate to: ${to}`)
 }
 
-//website search
-const searchQuery = ref('')
+onMounted(() => {
+  if (!navigator.geolocation) {
+    alert('Geolocation not supported')
+    return
+  }
 
-function onSearchClick() {
-  console.log('Search icon clicked with query:', searchQuery.value)
-  // You can add logic here like:
-  // searchProducts(searchQuery.value)
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      const lat = position.coords.latitude
+      const lng = position.coords.longitude
+
+      const map = L.map('map').setView([lat, lng], 13)
+      window.mapInstance = map
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors',
+      }).addTo(map)
+
+      L.marker([lat, lng]).addTo(map).bindPopup('You are here!').openPopup()
+    },
+    (error) => {
+      console.error('Geolocation error:', error)
+      alert('Failed to get your location')
+    },
+  )
+})
+async function onSearchClick() {
+  if (!searchQuery.value) {
+    alert('Please enter a location to search.')
+    return
+  }
+
+  const baseUrl =  'http://localhost:3001/api/search'
+  const params = new URLSearchParams({
+    q: searchQuery.value,
+  })
+
+  const url = `${baseUrl}?q=${encodeURIComponent(searchQuery.value)}`
+  console.log('Searching:', url)
+
+  try {
+    const response = await fetch(url)
+    const results = await response.json()
+
+    if (!results || results.length === 0) {
+      alert('Location not found.')
+      return
+    }
+
+    const lat = parseFloat(results[0].lat)
+    const lon = parseFloat(results[0].lon)
+
+    if (window.mapInstance) {
+      window.mapInstance.setView([lat, lon], 13)
+
+      if (currentMarker) {
+        window.mapInstance.removeLayer(currentMarker)
+      }
+
+      currentMarker = L.marker([lat, lon])
+        .addTo(window.mapInstance)
+        .bindPopup(`Searched: ${results[0].display_name}`)
+        .openPopup()
+    } else {
+      alert('Map not initialized.')
+    }
+  } catch (error) {
+    console.error('Search error:', error)
+    alert('Failed to search location.')
+  }
 }
 </script>
 
@@ -40,18 +105,21 @@ function onSearchClick() {
         <v-img class="ms-5" max-width="150" :src="logo" cover />
         <v-spacer />
         <v-text-field
-          class="web-search-bar"
-          append-inner-icon="mdi-magnify"
-          placeholder="Search location or item here"
-          variant="solo-filled"
-          flat
-          clearable
-          density="comfortable"
+          v-if="showSearch"
+          class="search-mobile"
+          placeholder="Search Location and item here"
           hide-details
-          color="primary"
+          bg-color="white"
+          density="compact"
+          flat
+          variant="solo-filled"
+          autofocus
+          append-inner-icon="mdi-close"
           v-model="searchQuery"
-          @click:append-inner="onSearchClick"
+          @keydown.enter="onSearchClick"
+          @click:append-inner="toggleSearch"
         />
+        <v-btn small class="mt-2 ml-2" color="primary" @click="onSearchClick"> Search </v-btn>
 
         <v-btn text class="nav-web" @click="navigate('home')">Home</v-btn>
         <v-btn text class="nav-web" @click="navigate('cart')">Cart</v-btn>
@@ -89,6 +157,8 @@ function onSearchClick() {
             variant="solo-filled"
             autofocus
             append-inner-icon="mdi-close"
+            v-model="searchQuery"
+            @keydown.enter="onSearchClick"
             @click:append-inner="toggleSearch"
           />
 
@@ -113,34 +183,34 @@ function onSearchClick() {
     </v-bottom-navigation>
 
     <v-main class="pa-4">
-  <!-- Recommended Section -->
-  <section class="section-block">
-    <h1 class="title-line">Recommended</h1>
-    <v-divider class="mydivide" />
-    <v-card class="item-holder">
-      <v-img class="item-pic" :src="logo" cover />
-    </v-card>
-  </section>
+      <div id="map" style="height: 400px"></div>
+      <!-- Recommended Section -->
+      <section class="section-block">
+        <h1 class="title-line">Recommended</h1>
+        <v-divider class="mydivide" />
+        <v-card class="item-holder">
+          <v-img class="item-pic" :src="logo" cover />
+        </v-card>
+      </section>
 
-  <!-- Nearby Stores Section -->
-  <section class="section-block">
-    <h1 class="title-line">Nearby Stores</h1>
-    <v-divider class="mydivide" />
-    <v-card class="item-holder">
-      <v-img class="item-pic" :src="logo" cover />
-    </v-card>
-  </section>
+      <!-- Nearby Stores Section -->
+      <section class="section-block">
+        <h1 class="title-line">Nearby Stores</h1>
+        <v-divider class="mydivide" />
+        <v-card class="item-holder">
+          <v-img class="item-pic" :src="logo" cover />
+        </v-card>
+      </section>
 
-  <!-- Featured Sellers Section -->
-  <section class="section-block">
-    <h1 class="title-line">Featured Sellers on Our Listing</h1>
-    <v-divider class="mydivide" />
-    <v-card class="item-holder">
-      <v-img class="item-pic" :src="logo" cover />
-    </v-card>
-  </section>
-</v-main>
-
+      <!-- Featured Sellers Section -->
+      <section class="section-block">
+        <h1 class="title-line">Featured Sellers on Our Listing</h1>
+        <v-divider class="mydivide" />
+        <v-card class="item-holder">
+          <v-img class="item-pic" :src="logo" cover />
+        </v-card>
+      </section>
+    </v-main>
   </v-app>
 </template>
 <style scoped>
