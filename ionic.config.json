@@ -1,0 +1,7 @@
+{
+  "name": "closeshop-vuejs",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "custom"
+}

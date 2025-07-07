@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useDisplay } from 'vuetify'
 import L from 'leaflet'
 import logo from '@/assets/img/closeshop-bg.png'
+import { Geolocation } from '@capacitor/geolocation'
 
 const { mdAndUp } = useDisplay()
 const isDesktop = computed(() => mdAndUp.value)
@@ -19,39 +20,34 @@ function navigate(to) {
   console.log(`Navigate to: ${to}`)
 }
 
-onMounted(() => {
-  if (!navigator.geolocation) {
-    alert('Geolocation not supported')
-    return
+onMounted(async () => {
+  try {
+    const position = await Geolocation.getCurrentPosition()
+
+    const lat = position.coords.latitude
+    const lng = position.coords.longitude
+
+    const map = L.map('map').setView([lat, lng], 13)
+    window.mapInstance = map
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors',
+    }).addTo(map)
+
+    L.marker([lat, lng]).addTo(map).bindPopup('You are here!').openPopup()
+  } catch (error) {
+    console.error('Geolocation error:', error)
+    alert('Failed to get your location: ' + error.message)
   }
-
-  navigator.geolocation.getCurrentPosition(
-    (position) => {
-      const lat = position.coords.latitude
-      const lng = position.coords.longitude
-
-      const map = L.map('map').setView([lat, lng], 13)
-      window.mapInstance = map
-
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap contributors',
-      }).addTo(map)
-
-      L.marker([lat, lng]).addTo(map).bindPopup('You are here!').openPopup()
-    },
-    (error) => {
-      console.error('Geolocation error:', error)
-      alert('Failed to get your location')
-    },
-  )
 })
+
 async function onSearchClick() {
   if (!searchQuery.value) {
     alert('Please enter a location to search.')
     return
   }
 
-  const baseUrl =  'http://localhost:3001/api/search'
+  const baseUrl = 'http:// 192.168.1.129:3001/api/search'
   const params = new URLSearchParams({
     q: searchQuery.value,
   })
