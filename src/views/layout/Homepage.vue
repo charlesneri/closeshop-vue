@@ -4,56 +4,85 @@ import { useDisplay } from 'vuetify'
 import L from 'leaflet'
 import logo from '@/assets/img/closeshop-bg.png'
 import { Geolocation } from '@capacitor/geolocation'
+import 'leaflet/dist/leaflet.css'
+import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
+import markerIcon from 'leaflet/dist/images/marker-icon.png'
+import markerShadow from 'leaflet/dist/images/marker-shadow.png'
 
+
+// Vuetify responsive breakpoint check
 const { mdAndUp } = useDisplay()
 const isDesktop = computed(() => mdAndUp.value)
 
+// Search & state refs
 const showSearch = ref(false)
 const searchQuery = ref('')
 let currentMarker = null
 
+// Toggle search input visibility
 function toggleSearch() {
   showSearch.value = !showSearch.value
 }
 
+// Navigation stub
 function navigate(to) {
   console.log(`Navigate to: ${to}`)
 }
+// Fix missing default icon issue
+delete L.Icon.Default.prototype._getIconUrl
 
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: markerIcon2x,
+  iconUrl: markerIcon,
+  shadowUrl: markerShadow,
+})
+// 📍 On component mount: request location, init map, show user marker
 onMounted(async () => {
   try {
-    const position = await Geolocation.getCurrentPosition()
+    // 🔐 Ask for permission
+    const permission = await Geolocation.requestPermissions()
 
+    // ❗ Check if granted
+    if (permission.location !== 'granted') {
+      alert('Location permission is required to show your position.')
+      return
+    }
+
+    // 🌍 Get current coordinates
+    const position = await Geolocation.getCurrentPosition()
     const lat = position.coords.latitude
     const lng = position.coords.longitude
+    console.log('📍 Location:', lat, lng)
 
+    // 🗺️ Initialize Leaflet map
     const map = L.map('map').setView([lat, lng], 13)
     window.mapInstance = map
 
+    // 🧱 Add OpenStreetMap tiles
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; OpenStreetMap contributors',
     }).addTo(map)
 
+    // 📌 Add marker
     L.marker([lat, lng]).addTo(map).bindPopup('You are here!').openPopup()
   } catch (error) {
-    console.error('Geolocation error:', error)
-    alert('Failed to get your location: ' + error.message)
+    console.error('❌ Geolocation error:', error)
+    alert('Failed to get location: ' + error.message)
   }
 })
 
+// 🔍 Search location and place marker
 async function onSearchClick() {
   if (!searchQuery.value) {
     alert('Please enter a location to search.')
     return
   }
 
-  const baseUrl = 'http:// 192.168.1.129:3001/api/search'
-  const params = new URLSearchParams({
-    q: searchQuery.value,
-  })
+  // Optional: Move this to a config file or env variable
+const baseUrl = 'http://192.168.1.129:3001/api/search'
 
   const url = `${baseUrl}?q=${encodeURIComponent(searchQuery.value)}`
-  console.log('Searching:', url)
+  console.log('🔍 Searching:', url)
 
   try {
     const response = await fetch(url)
@@ -70,10 +99,12 @@ async function onSearchClick() {
     if (window.mapInstance) {
       window.mapInstance.setView([lat, lon], 13)
 
+      // Remove old search marker if it exists
       if (currentMarker) {
         window.mapInstance.removeLayer(currentMarker)
       }
 
+      // Add new search marker
       currentMarker = L.marker([lat, lon])
         .addTo(window.mapInstance)
         .bindPopup(`Searched: ${results[0].display_name}`)
@@ -82,7 +113,7 @@ async function onSearchClick() {
       alert('Map not initialized.')
     }
   } catch (error) {
-    console.error('Search error:', error)
+    console.error('❌ Search error:', error)
     alert('Failed to search location.')
   }
 }
